@@ -16,6 +16,9 @@ const client = new pg.Client({
   database: "media-notes",
 });
 client.connect();
+let checkedType = "both";
+let checkedOrder = "rating";
+let direction = "DESC";
 
 /*--------------------- initialize helpers -----------------------------------*/
 // format date retrieved from API for database input
@@ -79,14 +82,22 @@ app.use(bodyParser.urlencoded({ extended: true }));
 /*------------ initialize route-handlers/additional middleware ---------------*/
 app.get("/", async (req, res) => {
   try {
+    const where =
+      checkedType === "both" ? "" : "WHERE type = '" + checkedType + "' ";
+    direction = checkedOrder === "title" ? "ASC" : "DESC";
     const result = await client.query(
-      "SELECT * FROM reviews JOIN media ON imdb_id = show_id ORDER BY rating DESC"
+      "SELECT * FROM reviews JOIN media ON imdb_id = show_id " +
+        where +
+        "ORDER BY " +
+        checkedOrder +
+        " " +
+        direction
     );
     res.render("index.ejs", {
       media: result.rows,
       extractDate,
-      checkedType: "both",
-      checkedOrder: "rating",
+      checkedType,
+      checkedOrder,
     });
   } catch (err) {
     console.error(
@@ -111,29 +122,24 @@ app.post("/create", async (req, res) => {
 
 app.post("/", async (req, res) => {
   try {
-    let result;
-    const direction = req.body.order === "title" ? "ASC" : "DESC";
-    if (req.body.type === "both") {
-      result = await client.query(
-        "SELECT * FROM reviews JOIN media ON imdb_id = show_id ORDER BY " +
-          req.body.order +
-          " " +
-          direction
-      );
-    } else {
-      result = await client.query(
-        "SELECT * FROM reviews JOIN media ON imdb_id = show_id WHERE type = $1 ORDER BY " +
-          req.body.order +
-          " " +
-          direction,
-        [req.body.type]
-      );
-    }
+    checkedType = req.body.type;
+    checkedOrder = req.body.order;
+    const where =
+      checkedType === "both" ? "" : "WHERE type = '" + checkedType + "' ";
+    direction = checkedOrder === "title" ? "ASC" : "DESC";
+    const result = await client.query(
+      "SELECT * FROM reviews JOIN media ON imdb_id = show_id " +
+        where +
+        "ORDER BY " +
+        req.body.order +
+        " " +
+        direction
+    );
     res.render("index.ejs", {
       media: result.rows,
       extractDate,
-      checkedType: req.body.type,
-      checkedOrder: req.body.order,
+      checkedType,
+      checkedOrder,
     });
   } catch (err) {
     console.error("Error Cause: Cannot filter media \n", err.stack);
