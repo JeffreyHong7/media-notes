@@ -109,12 +109,19 @@ app.get("/", async (req, res) => {
 
 app.post("/create", async (req, res) => {
   if (req.body.id) {
-    const id = req.body.id;
-    const result = await client.query(
-      "SELECT * FROM reviews JOIN media ON show_id = imdb_id WHERE imdb_id = $1",
-      [id]
-    );
-    res.render("create.ejs", { edit: result.rows[0] });
+    try {
+      const id = req.body.id;
+      const result = await client.query(
+        "SELECT * FROM reviews JOIN media ON show_id = imdb_id WHERE imdb_id = $1",
+        [id]
+      );
+      res.render("create.ejs", { edit: result.rows[0] });
+    } catch (err) {
+      console.error(
+        "Error Cause: Error retrieving media to be edited \n",
+        err.stack
+      );
+    }
   } else {
     res.render("create.ejs");
   }
@@ -202,40 +209,33 @@ app.post("/add", async (req, res) => {
 });
 
 app.post("/edit", async (req, res) => {
+  // grab IMDb ID
+  const id = req.body.id;
+  // initialize data for record to be updated in database;
+  const review = req.body.review;
+  const watchDate = req.body.watchDate;
+  const rating = parseInt(req.body.rating);
+  const showType = req.body.type;
+  // query data
   try {
-    // grab IMDb ID
-    const id = req.body.id;
-    // initialize data for record to be updated in database;
-    const review = req.body.review;
-    const watchDate = req.body.watchDate;
-    const rating = parseInt(req.body.rating);
-    const showType = req.body.type;
-    // query data
+    await client.query(
+      "UPDATE media SET watch_date = $1, type = $2 WHERE imdb_id = $3",
+      [watchDate, showType, id]
+    );
     try {
       await client.query(
-        "UPDATE media SET watch_date = $1, type = $2 WHERE imdb_id = $3",
-        [watchDate, showType, id]
+        "UPDATE reviews SET rating = $1, review = $2 WHERE show_id = $3",
+        [rating, review, id]
       );
-      try {
-        await client.query(
-          "UPDATE reviews SET rating = $1, review = $2 WHERE show_id = $3",
-          [rating, review, id]
-        );
-        res.redirect("/");
-      } catch (err) {
-        console.error(
-          "Error Cause: Could not update data in reviews \n",
-          err.stack
-        );
-      }
+      res.redirect("/");
     } catch (err) {
       console.error(
-        "Error Cause: Could not update data in media \n",
+        "Error Cause: Could not update data in reviews \n",
         err.stack
       );
     }
   } catch (err) {
-    console.error("Error Cause: Could not fetch movie \n", err.stack);
+    console.error("Error Cause: Could not update data in media \n", err.stack);
   }
 });
 
