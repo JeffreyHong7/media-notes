@@ -7,8 +7,48 @@
   </head>
   <body>
     <h1>Jeff's Shows</h1>
-    <form action="/new" method="get">
+    <form action="/create" method="post">
       <input type="submit" value="Create a new review!" />
     </form>
+    <form action="/" method = "post">
+      Filter by...
+      <input type="radio" name="type" id="movie" value="movie" onchange="this.form.submit()"/>
+      <label for="movie">movie</label>
+      <input type="radio" name="type" id="series" value="series" onchange="this.form.submit()"/>
+      <label for="series">series</label>
+      <input type="radio" name="type" id="both" value="both" onchange="this.form.submit()"/>
+      <label for="both">both</label>
+      <br>
+      Order by...
+      <input type="radio" name="order" id="watch_date" value="watch_date"  onchange="this.form.submit()"/>
+      <label for="watch_date">recently watched</label>
+      <input type="radio" name="order" id="rating" value="rating" onchange="this.form.submit()"/>
+      <label for="rating">rating</label>
+      <input type="radio" name="order" id="title" value="title" onchange="this.form.submit()"/>
+      <label for="title">title</label>
+    </form>
+    <%media.forEach((element) => { %>
+    <div>
+      <h2><%=element.title%></h2>
+      <img src="<%=element.poster%>" alt="Poster for <%=element.title%>" />
+      <h3>My Rating: <%=element.rating%>/10</h3>
+      <p>
+        <b>Release date:</b> <%=extractDate(element.release_date)%>
+        <b>Watch date:</b> <%=extractDate(element.watch_date)%>
+      </p>
+      <p><b>Thoughts:</b> <%=element.review%></p>
+      <form method="post">
+        <input type="hidden" name="id" value="<%=element.imdb_id%>" />
+        <input type="submit" formaction="/create" value="edit" />
+        <input type="submit" formaction="/delete" value="delete" />
+      </form>
+      <hr />
+    </div>
+    <%})%>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script> 
+      $("#<%= checkedType%>").attr("checked", "true");
+      $("#<%= checkedOrder%>").attr("checked", "true");
+    </script>
   </body>
 </html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New Show!</title>
+  </head>
+  <body>
+    <%if (!locals.edit) {%>
+      <form action="/add" method="post">
+        <input type="text" name="id" placeholder="Add IMDb ID Here!" required />
+        <input type="text" name="review" placeholder="Add Review Here!" />
+        <input type="number" name="rating" placeholder="Rate Show Out of 10!" required />
+        <input type="date" name="watchDate" required />
+        <input type="radio" name="type" id="movie" value="movie" required />
+        <label for="movie">movie</label>
+        <input type="radio" name="type" id="series" value="series" required/>
+        <label for="series">series</label>
+        <input type="submit" />
+      </form>
+    <%} else {%>
+      <form action="/edit" method="post">
+        <!-- Persist data that the user should not be able to modify to prevent unnecessary API requests -->
+        <input 
+          type="hidden" 
+          name="id" 
+          value="<%= edit.imdb_id %>" 
+        />
+        <!--What the user can change-->
+        <p>Editing: <%= edit.title %></p>
+        <input 
+          type="text" 
+          name="review" 
+          placeholder="Add Review Here!" 
+          value="<%= edit.review %>" 
+        />
+        <input
+          type="number"
+          name="rating"
+          placeholder="Rate Show Out of 10!"
+          value="<%= edit.rating %>" 
+          required
+        />
+        <input 
+          type="date" 
+          name="watchDate"
+          value="<%= edit.watch_date.getFullYear() + "-" 
+                  + edit.watch_date.getMonth().toString().padStart(2, "0") + "-"
+                  + edit.watch_date.getDate().toString().padStart(2, "0")%>"
+          required 
+        />
+        <input 
+          type="radio" 
+          name="type" 
+          id="movie" 
+          value="movie" 
+          <% if (edit.type === "movie") { %>checked<% } %>
+          required 
+        />
+        <label for="movie">movie</label>
+        <input 
+          type="radio" 
+          name="type" 
+          id="series" 
+          value="series"
+          <% if (edit.type === "series") { %>checked<% } %>
+          required
+        />
+        <label for="series">series</label>
+        <input type="submit" />
+      </form>
+    <%}%>
+  </body>
+</html>

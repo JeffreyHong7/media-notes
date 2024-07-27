@@ -3,7 +3,7 @@ import axios from "axios";
 import pg from "pg";
 import bodyParser from "body-parser";
 
-// initialize important variables
+/*--------------------- initialize important variables ------------------------*/
 const app = express();
 const port = 3000;
 const URL = "https://www.omdbapi.com";
@@ -17,7 +17,8 @@ const client = new pg.Client({
 });
 client.connect();
 
-// initialize helpers
+/*--------------------- initialize helpers -----------------------------------*/
+// format date retrieved from API for database input
 function formatDate(date) {
   const year = date.slice(-4);
   const day = date.slice(0, 2);
@@ -65,17 +66,78 @@ function formatDate(date) {
   return year + "-" + month + "-" + day;
 }
 
-// initialize middleware
+// extract date from database record and format as necessary
+function extractDate(date) {
+  const dateString = date.toString();
+  return dateString.slice(4, 10) + "," + dateString.slice(10, 15);
+}
+
+/*--------------------- initialize middleware --------------------------------*/
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// initialize route-handlers/additional middleware
-app.get("/", (req, res) => {
-  res.render("index.ejs");
+/*------------ initialize route-handlers/additional middleware ---------------*/
+app.get("/", async (req, res) => {
+  try {
+    const result = await client.query(
+      "SELECT * FROM reviews JOIN media ON imdb_id = show_id ORDER BY rating DESC"
+    );
+    res.render("index.ejs", {
+      media: result.rows,
+      extractDate,
+      checkedType: "both",
+      checkedOrder: "rating",
+    });
+  } catch (err) {
+    console.error(
+      "Error Cause: Error retrieving data from media-notes \n",
+      err.stack
+    );
+  }
 });
 
-app.get("/new", (req, res) => {
-  res.render("new.ejs");
+app.post("/create", async (req, res) => {
+  if (req.body.id) {
+    const id = req.body.id;
+    const result = await client.query(
+      "SELECT * FROM reviews JOIN media ON show_id = imdb_id WHERE imdb_id = $1",
+      [id]
+    );
+    res.render("create.ejs", { edit: result.rows[0] });
+  } else {
+    res.render("create.ejs");
+  }
+});
+
+app.post("/", async (req, res) => {
+  try {
+    let result;
+    const direction = req.body.order === "title" ? "ASC" : "DESC";
+    if (req.body.type === "both") {
+      result = await client.query(
+        "SELECT * FROM reviews JOIN media ON imdb_id = show_id ORDER BY " +
+          req.body.order +
+          " " +
+          direction
+      );
+    } else {
+      result = await client.query(
+        "SELECT * FROM reviews JOIN media ON imdb_id = show_id WHERE type = $1 ORDER BY " +
+          req.body.order +
+          " " +
+          direction,
+        [req.body.type]
+      );
+    }
+    res.render("index.ejs", {
+      media: result.rows,
+      extractDate,
+      checkedType: req.body.type,
+      checkedOrder: req.body.order,
+    });
+  } catch (err) {
+    console.error("Error Cause: Cannot filter media \n", err.stack);
+  }
 });
 
 app.post("/add", async (req, res) => {
@@ -98,7 +160,7 @@ app.post("/add", async (req, res) => {
     const showType = req.body.type;
     // query data
     try {
-      await client.query("INSERT INTO shows VALUES ($1, $2, $3, $4, $5, $6)", [
+      await client.query("INSERT INTO media VALUES ($1, $2, $3, $4, $5, $6)", [
         id,
         title,
         releaseDate,
@@ -107,26 +169,79 @@ app.post("/add", async (req, res) => {
         showType,
       ]);
       try {
+        await client.query("INSERT INTO reviews VALUES ($1, $2, $3)", [
+          rating,
+          review,
+          id,
+        ]);
+        res.redirect("/");
+      } catch (err) {
+        console.error(
+          "Error Cause: Could not insert data into reviews \n",
+          err.stack
+        );
+      }
+    } catch (err) {
+      console.error(
+        "Error Cause: Could not insert data into media \n",
+        err.stack
+      );
+    }
+  } catch (err) {
+    console.error("Error Cause: Could not fetch movie \n", err.stack);
+  }
+});
+
+app.post("/edit", async (req, res) => {
+  try {
+    // grab IMDb ID
+    const id = req.body.id;
+    // initialize data for record to be updated in database;
+    const review = req.body.review;
+    const watchDate = req.body.watchDate;
+    const rating = parseInt(req.body.rating);
+    const showType = req.body.type;
+    // query data
+    try {
+      await client.query(
+        "UPDATE media SET watch_date = $1, type = $2 WHERE imdb_id = $3",
+        [watchDate, showType, id]
+      );
+      try {
         await client.query(
-          "INSERT INTO reviews (rating, review, show_id) VALUES ($1, $2, $3)",
+          "UPDATE reviews SET rating = $1, review = $2 WHERE show_id = $3",
           [rating, review, id]
         );
         res.redirect("/");
       } catch (err) {
-        console.error("Could not insert data into reviews", err.stack);
+        console.error(
+          "Error Cause: Could not update data in reviews \n",
+          err.stack
+        );
       }
     } catch (err) {
-      console.error("Could not insert data into shows", err.stack);
+      console.error(
+        "Error Cause: Could not update data in media \n",
+        err.stack
+      );
     }
   } catch (err) {
-    console.error("Could not fetch movie", err.stack);
+    console.error("Error Cause: Could not fetch movie \n", err.stack);
   }
 });
 
-app.get("/delete", async (req, res) => {});
-app.get("/edit", async (req, res) => {});
+app.post("/delete", async (req, res) => {
+  try {
+    const id = req.body.id;
+    await client.query("DELETE FROM reviews WHERE show_id = $1", [id]);
+    await client.query("DELETE FROM media WHERE imdb_id = $1", [id]);
+    res.redirect("/");
+  } catch (err) {
+    console.error("Error Cause: Could not delete media \n", err.stack);
+  }
+});
 
-// start server
+/*---------------------------- start server ----------------------------------*/
 app.listen(port, () => {
   console.log(`Listening in on Port ${port}`);
 });
