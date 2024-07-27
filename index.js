@@ -127,30 +127,10 @@ app.post("/create", async (req, res) => {
   }
 });
 
-app.post("/", async (req, res) => {
-  try {
-    checkedType = req.body.type;
-    checkedOrder = req.body.order;
-    const where =
-      checkedType === "both" ? "" : "WHERE type = '" + checkedType + "' ";
-    direction = checkedOrder === "title" ? "ASC" : "DESC";
-    const result = await client.query(
-      "SELECT * FROM reviews JOIN media ON imdb_id = show_id " +
-        where +
-        "ORDER BY " +
-        req.body.order +
-        " " +
-        direction
-    );
-    res.render("index.ejs", {
-      media: result.rows,
-      extractDate,
-      checkedType,
-      checkedOrder,
-    });
-  } catch (err) {
-    console.error("Error Cause: Cannot filter media \n", err.stack);
-  }
+app.post("/", (req, res) => {
+  checkedType = req.body.type;
+  checkedOrder = req.body.order;
+  res.redirect("/");
 });
 
 app.post("/add", async (req, res) => {
