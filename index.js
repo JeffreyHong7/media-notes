@@ -149,7 +149,7 @@ app.post("/add", async (req, res) => {
     const poster = response.data["Poster"];
     const review = req.body.review;
     const watchDate = req.body.watchDate;
-    const rating = parseInt(req.body.rating);
+    const rating = parseFloat(req.body.rating);
     const showType = req.body.type;
     // query data
     try {
@@ -194,7 +194,7 @@ app.post("/edit", async (req, res) => {
   // initialize data for record to be updated in database;
   const review = req.body.review;
   const watchDate = req.body.watchDate;
-  const rating = parseInt(req.body.rating);
+  const rating = parseFloat(req.body.rating);
   const showType = req.body.type;
   // query data
   try {

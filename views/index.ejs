@@ -36,7 +36,9 @@
         <b>Release date:</b> <%=extractDate(element.release_date)%>
         <b>Watch date:</b> <%=extractDate(element.watch_date)%>
       </p>
-      <p><b>Thoughts:</b> <%=element.review%></p>
+      <% if (element.review) {%>
+        <p><b>Thoughts:</b> <%=element.review%></p>
+      <%}%>
       <form method="post">
         <input type="hidden" name="id" value="<%=element.imdb_id%>" />
         <input type="submit" formaction="/create" value="edit" />

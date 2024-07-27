@@ -16,7 +16,7 @@
           <%}%>
         required />
         <input type="text" name="review" placeholder="Add Review Here!" />
-        <input type="number" name="rating" placeholder="Rate Show Out of 10!" required />
+        <input type="number" name="rating" placeholder="Rate Show Out of 10!" step = "0.1" required />
         <input type="date" name="watchDate" required />
         <input type="radio" name="type" id="movie" value="movie" required />
         <label for="movie">movie</label>
@@ -45,6 +45,7 @@
           name="rating"
           placeholder="Rate Show Out of 10!"
           value="<%= edit.rating %>" 
+          step = "0.1" 
           required
         />
         <input 

@@ -6,3 +6,4 @@ Steps to Access Website
 4. Run "npm i" (and "npm audit fix")
 5. Run "node --watch index.js"
 6. On your web browser, enter the following: localhost:3000
+7. When creating a new review, the IMDb ID of a media can be found in the URL link of the IMDb page corresponding to the media that you want to write a review to. Following, https://www.imdb.com/title/ there should be an ID starting with 2 letters and at least 7 numbers.
