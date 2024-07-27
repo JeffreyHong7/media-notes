@@ -186,15 +186,18 @@ app.post("/add", async (req, res) => {
           "Error Cause: Could not insert data into reviews \n",
           err.stack
         );
+        res.render("create.ejs", { error: "duplicate media not allowed" });
       }
     } catch (err) {
       console.error(
         "Error Cause: Could not insert data into media \n",
         err.stack
       );
+      res.render("create.ejs", { error: "duplicate media not allowed" });
     }
   } catch (err) {
     console.error("Error Cause: Could not fetch movie \n", err.stack);
+    res.render("create.ejs", { error: "invalid IMDb ID" });
   }
 });
 
